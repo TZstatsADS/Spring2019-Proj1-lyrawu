@@ -25,6 +25,7 @@ From the packages' descriptions:
 
 ```{r load libraries, warning=FALSE, message=FALSE}
 library(tm)
+library(dplyr)
 library(tidytext)
 library(tidyverse)
 library(DT)
@@ -50,6 +51,12 @@ corpus <- VCorpus(VectorSource(hm_data$cleaned_hm))%>%
   tm_map(stripWhitespace)
 ```
 
+```{r}
+# head(corpus)
+# str(corpus, max.level=2)
+```
+
+
 ### Step 3 - Stemming words and converting tm object to tidy object
 
 Stemming reduces a word to its word *stem*. We stem the words here and then convert the "tm" object to a "tidy" object for much faster processing.
@@ -57,8 +64,13 @@ Stemming reduces a word to its word *stem*. We stem the words here and then conv
 ```{r stemming}
 stemmed <- tm_map(corpus, stemDocument) %>%
   tidy() %>%
-  select(text)
+  dplyr::select(text)
 ```
+
+```{r}
+head(stemmed)
+```
+
 
 ### Step 4 - Creating tidy format of the dictionary to be used for completing stems
 
@@ -66,7 +78,7 @@ We also need a dictionary to look up the words corresponding to the stems.
 
 ```{r tidy dictionary}
 dict <- tidy(corpus) %>%
-  select(text) %>%
+  dplyr::select(text) %>%
   unnest_tokens(dictionary, text)
 ```
 
@@ -81,7 +93,7 @@ word <- c("happy","ago","yesterday","lot","today","months","month",
                  "happier","happiest","last","week","past")
 
 stop_words <- stop_words %>%
-  bind_rows(mutate(tibble(word), lexicon = "updated"))
+  dplyr::bind_rows(dplyr::mutate(tibble(word), lexicon = "updated"))
 ```
 
 ### Step 6 - Combining stems and dictionary into the same tibble
@@ -95,6 +107,11 @@ completed <- stemmed %>%
   bind_cols(dict) %>%
   anti_join(stop_words, by = c("dictionary" = "word"))
 ```
+
+```{r}
+head(completed)
+```
+
 
 ### Step 7 - Stem completion
 
@@ -123,6 +140,11 @@ completed <- completed %>%
   ungroup()
 ```
 
+```{r}
+head(completed)
+```
+
+
 ### Step 9 - Keeping a track of the happy moments with their own ID
 
 ```{r cleaned hm_data, warning=FALSE, message=FALSE}
@@ -136,7 +158,7 @@ datatable(hm_data)
 ### Exporting the processed text data into a CSV file
 
 ```{r export data}
-write_csv(hm_data, "../output/processed_moments.csv")
+write_csv(hm_data, "../output/processed_moments.csv") 
 ```
 
 The final processed data is ready to be used for any kind of analysis.
